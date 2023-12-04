@@ -1,0 +1,30 @@
+Part 1: 536576
+Part 2: 75741499
+Time elapsed: 842.283µs
+
+
+
+535 299
+
+75 741 499
+75 741 499
+
+total numbers:  1211
+total matches:  1087
+Part 1: 536576
+Part 2: 75741499
+Time elapsed: 784.366µs
+
+
+total numbers:  1206
+total matches:  1085
+rows done 140
+sum is 535158
+Time elapsed: 98.376µs
+
+
+total numbers:  1211
+total matches:  1087
+rows done 140
+sum is 535299
+Time elapsed: 4.494834ms

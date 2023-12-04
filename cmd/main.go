@@ -1,15 +1,19 @@
 package main
 
 import (
-	"advent-of-code-2023/pkg/day2"
+	"advent-of-code-2023/pkg/day3"
 	"fmt"
-	"log"
+	"time"
 )
 
-func main() {
-	fmt.Println("hello advent of code 2023")
-	err := day2.Solve1()
+func timeFunction(function func() error) {
+	start := time.Now()
+	err := function()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("error", err)
 	}
+	fmt.Println("Time elapsed:", time.Since(start))
+}
+func main() {
+	timeFunction(day3.Solve)
 }

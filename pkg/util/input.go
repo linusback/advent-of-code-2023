@@ -6,6 +6,24 @@ import (
 	"io"
 )
 
+func DoEachRowAll(input []byte, f func(row []byte, rows [][]byte, nr, total int) error) (err error) {
+	b := bytes.Split(input, []byte{'\n'})
+	return DoEachRowAllBytes(b, f)
+}
+
+func DoEachRowAllBytes(rows [][]byte, f func(row []byte, rows [][]byte, nr, total int) error) (err error) {
+	var (
+		total = len(rows)
+	)
+	for i := 0; i < total; i++ {
+		err = f(rows[i], rows, i, total)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 func DoEachRow(input []byte, f func(row []byte, nr int) error) (err error) {
 	r := bufio.NewReader(bytes.NewReader(input))
 	return DoEachRowReader(r, f)

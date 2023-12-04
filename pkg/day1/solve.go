@@ -20,7 +20,7 @@ func Solve1() (err error) {
 		return
 	}
 
-	err = util.DoEachRow(b, func(row []byte) error {
+	err = util.DoEachRow(b, func(row []byte, nr int) error {
 		var (
 			start, end = -1, -1
 		)
@@ -55,7 +55,7 @@ func Solve2() (err error) {
 
 	//numbersAsText := map[string]int64{}
 
-	err = util.DoEachRow(b, func(row []byte) error {
+	err = util.DoEachRow(b, func(row []byte, nr int) error {
 		var (
 			start, end int64 = -1, -1
 		)

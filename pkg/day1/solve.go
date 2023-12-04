@@ -48,7 +48,7 @@ func Solve2() (err error) {
 		b     []byte
 		total int64
 	)
-	b, err = f.ReadFile("example2.txt")
+	b, err = f.ReadFile("input.txt")
 	if err != nil {
 		return
 	}
@@ -67,16 +67,17 @@ func Solve2() (err error) {
 				end = int64(row[i] - '0')
 				continue
 			}
-			if res, increment := checkText(row[i:]); res > 0 {
+			if res, _ := checkText(row[i:]); res > 0 {
 				if start == -1 {
 					start = res * 10
 				}
 				end = res
-				i += increment
+				//i += increment
 			}
 
 		}
 		fmt.Printf("start: %d, end: %d, total: %d\n", start, end, start+end)
+		fmt.Println("line: ", string(row))
 		if start == -1 {
 			return nil
 		}
@@ -104,6 +105,7 @@ func checkText(sub []byte) (int64, int) {
 		}
 	}
 	if len(sub) >= 4 {
+		//fmt.Println("substring", string(sub[:4]))
 		switch string(sub[:4]) {
 		case "four":
 			return 4, 3
@@ -113,6 +115,7 @@ func checkText(sub []byte) (int64, int) {
 			return 9, 3
 		}
 	}
+	//fmt.Println("substring", string(sub[:3]))
 	switch string(sub[:3]) {
 	case "one":
 		return 1, 2

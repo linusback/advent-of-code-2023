@@ -11,8 +11,7 @@ var f embed.FS
 
 type MapWrapper struct {
 	Name string
-	//Rows [][]uint64
-	Map map[uint64]uint64
+	Rows [][]uint64
 }
 
 var (
@@ -27,9 +26,10 @@ var (
 )
 
 func (m *MapWrapper) Get(src uint64) uint64 {
-	u, ok := m.Map[src]
-	if ok {
-		return u
+	for i := 0; i < len(m.Rows); i++ {
+		if m.Rows[i][1] <= src && src < m.Rows[i][3] {
+			return m.Rows[i][0] + (src - m.Rows[i][1])
+		}
 	}
 	return src
 }
@@ -46,7 +46,7 @@ func Solve() (err error) {
 	err = util.DoEachRowAll(b, func(row []byte, rows [][]byte, nr, total int) error {
 		if nr == 0 {
 			seeds = parseLine(row[7:])
-			fmt.Println("parsed seeds")
+			//fmt.Println("parsed seeds")
 			return nil
 		}
 		if len(row) == 0 {
@@ -55,47 +55,47 @@ func Solve() (err error) {
 		switch string(row) {
 		case "seed-to-soil map:":
 			currentParse = &seedToSoil
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to soil")
+			currentParse.Name = "seed-to-soil map"
+			//fmt.Println("parsing seed to soil")
 			return nil
 		case "soil-to-fertilizer map:":
 			currentParse = &soilToFertilizer
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to ferti")
+			currentParse.Name = "soil-to-fertilizer map"
+			//fmt.Println("parsing seed to ferti")
 			return nil
 		case "fertilizer-to-water map:":
 			currentParse = &fertilizerToWater
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to water")
+			currentParse.Name = "fertilizer-to-water map"
+			//fmt.Println("parsing seed to water")
 			return nil
 		case "water-to-light map:":
 			currentParse = &waterToLight
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to light")
+			currentParse.Name = "water-to-light map"
+			//fmt.Println("parsing seed to light")
 			return nil
 		case "light-to-temperature map:":
 			currentParse = &lightToTemperature
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to temp")
+			currentParse.Name = "light-to-temperature map"
+			//fmt.Println("parsing seed to temp")
 			return nil
 		case "temperature-to-humidity map:":
 			currentParse = &temperatureToHumidity
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to hum")
+			currentParse.Name = "temperature-to-humidity map"
+			//fmt.Println("parsing seed to hum")
 			return nil
 		case "humidity-to-location map:":
 			currentParse = &humidityToLocation
-			currentParse.Map = make(map[uint64]uint64)
-			fmt.Println("parsing seed to loc")
+			currentParse.Name = "humidity-to-location map"
+			//fmt.Println("parsing seed to loc")
 			return nil
 		default:
 			parseMapLine(row, currentParse)
-			fmt.Println("parsing line")
+			//fmt.Println("parsing line")
 			return nil
 		}
 
 	})
-	fmt.Printf("parsing done")
+	//fmt.Println("parsing done")
 	//fmt.Println(seedToSoil)
 	//fmt.Println(soilToFertilizer)
 	//fmt.Println(fertilizerToWater)
@@ -103,8 +103,9 @@ func Solve() (err error) {
 	//fmt.Println(lightToTemperature)
 	//fmt.Println(temperatureToHumidity)
 	//fmt.Println(humidityToLocation)
-	var minVal uint64 = 1
-	minVal = minVal << 63
+	var minVal, minVal2 uint64
+	minVal = 1 << 63
+	minVal2 = minVal
 	for _, seed := range seeds {
 		v := getValue(seed,
 			&seedToSoil,
@@ -119,7 +120,28 @@ func Solve() (err error) {
 			minVal = v
 		}
 	}
+	for i := 0; i < len(seeds); i = i + 2 {
+		var j uint64 = 0
+		fmt.Println("from ", seeds[i], " to ", seeds[i]+seeds[i+1], " total ", seeds[i+1])
+		for ; j < seeds[i+1]; j++ {
+			v := getValue(seeds[i]+j,
+				&seedToSoil,
+				&soilToFertilizer,
+				&fertilizerToWater,
+				&waterToLight,
+				&lightToTemperature,
+				&temperatureToHumidity,
+				&humidityToLocation,
+			)
+			if v < minVal2 {
+				minVal2 = v
+			}
+
+		}
+	}
+
 	fmt.Println(minVal)
+	fmt.Println(minVal2)
 	return
 }
 
@@ -135,11 +157,8 @@ func parseMapLine(line []byte, m *MapWrapper) {
 	if len(l) != 3 {
 		panic(fmt.Sprintf("map line not 3 got %d\n row: %s", len(l), string(line)))
 	}
-	var i uint64
-	for ; i < l[2]; i++ {
-		//fmt.Println("Setting", l[1]+i, l[0]+i)
-		m.Map[l[1]+i] = l[0] + i
-	}
+	l = append(l, l[1]+l[2])
+	m.Rows = append(m.Rows, l)
 }
 
 func parseLine(line []byte) []uint64 {

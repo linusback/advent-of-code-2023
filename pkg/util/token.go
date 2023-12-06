@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"slices"
 )
 
@@ -68,20 +69,16 @@ func (p *TokenParser) stateValue() Token {
 	var s uint64
 
 	for i := p.curr; i < p.len; i++ {
-		//fmt.Println("loop", string(p.arr[i]))
 		if p.state == valueState {
-			//fmt.Println("next", string(p.arr[i]))
 			if i+1 == p.len {
-				//fmt.Println("last", string(p.arr[i]))
+				p.curr = p.len
 				p.state = doneState
-				return p.arr[s:i]
+				return p.arr[s:p.len]
 			}
 			p.isSepSet(p.arr[i])
 			if p.state == valueState {
-				//fmt.Println("more", string(p.arr[i]))
 				continue
 			}
-			//fmt.Println("value", string(p.arr[i]))
 			p.curr = i + 1
 			return p.arr[s:i]
 		}
@@ -89,10 +86,7 @@ func (p *TokenParser) stateValue() Token {
 			p.isSepSet(p.arr[i])
 			if p.state == valueState {
 				s = i
-				//fmt.Println("start", string(p.arr[i]))
 			}
-
-			p.state = valueState
 		}
 	}
 	p.state = doneState
@@ -143,12 +137,44 @@ func (t Token) ParseUInt64() uint64 {
 
 type TokenSlice []Token
 
+func (ts TokenSlice) ToUint64() []uint64 {
+	res := make([]uint64, len(ts))
+	return ts.ConvertToUint64(res)
+}
+
+func (ts TokenSlice) ConvertToUint64(res []uint64) []uint64 {
+	if len(res) < len(ts) {
+		res = make([]uint64, len(ts))
+		fmt.Println("growing res")
+	}
+	for i := 0; i < len(ts); i++ {
+		res[i] = ts[i].ParseUInt64()
+	}
+	return res
+}
+
+func (ts TokenSlice) ToInt64() []int64 {
+	res := make([]int64, len(ts))
+	return ts.ConvertToInt64(res)
+}
+
+func (ts TokenSlice) ConvertToInt64(res []int64) []int64 {
+	if len(res) < len(ts) {
+		res = make([]int64, len(ts))
+		fmt.Println("growing res")
+	}
+	for i := 0; i < len(ts); i++ {
+		res[i] = ts[i].ParseInt64()
+	}
+	return res
+}
+
 func (ts TokenSlice) ToString() string {
 	if len(ts) == 0 {
 		return ""
 	}
 	b := []byte{'['}
-	del := []byte{' ', ','}
+	del := []byte{',', ' '}
 	for i := 0; i < len(ts); i++ {
 		b = append(b, ts[i]...)
 		b = append(b, del...)

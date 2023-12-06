@@ -52,6 +52,15 @@ func Solve() (err error) {
 	)
 	//b, err = f.ReadFile("example.txt")
 	b, err = f.ReadFile("input.txt")
+	p := util.NewTokenParser(b)
+	//var r util.TokenSlice
+	for p.More() {
+		fmt.Println("token: ", string(p.Next()))
+		//r = p.NextRow()
+		//fmt.Println("name: ", string(r[0]))
+		//fmt.Println("val: ", r[1:].ToString())
+	}
+	return
 
 	if err != nil {
 		return

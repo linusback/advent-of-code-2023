@@ -20,6 +20,9 @@ func ParseInt64NoError(arr []byte) (res int64) {
 	var mult int64 = 1
 
 	for i := len(arr) - 1; i >= 0; i-- {
+		if arr[i] == '-' {
+			return -res
+		}
 		if arr[i] < '0' || arr[i] > '9' {
 			return
 		}

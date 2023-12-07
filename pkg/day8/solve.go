@@ -1,4 +1,4 @@
-package template
+package day8
 
 import (
 	"advent-of-code-2023/pkg/util"

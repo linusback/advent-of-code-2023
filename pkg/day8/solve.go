@@ -4,6 +4,7 @@ import (
 	"advent-of-code-2023/pkg/util"
 	"embed"
 	"fmt"
+	"time"
 )
 
 //go:embed *.txt
@@ -17,19 +18,27 @@ type network struct {
 type Path struct {
 	start, curr, end uint16
 	visited          [17576]uint64
-	cycle            uint64
+	cycle, toFind    uint64
 }
 
 func (p *Path) ToString() string {
 
 	visited := make([]string, p.cycle)
 	visited[0] = toString(p.start)
+	found := 1
 	for i := uint16(0); i < uint16(len(p.visited)); i++ {
 		if p.visited[i] > 0 {
 			visited[p.visited[i]] = toString(i)
+			found++
 		}
 	}
-	return fmt.Sprintf("{start: %s, curr: %s, end: %s, cycle: %d, visited: %v}", toString(p.start), toString(p.curr), toString(p.end), p.cycle, visited)
+	visited2 := make([]string, 0, found)
+	for i := 0; i < len(visited); i++ {
+		if visited[i] != "" {
+			visited2 = append(visited2, visited[i])
+		}
+	}
+	return fmt.Sprintf("{start: %s, curr: %s, end: %s, toFind:%d, cycle: %d, visited: %v}", toString(p.start), toString(p.curr), toString(p.end), p.toFind, p.cycle, visited2)
 }
 
 func Solve() (err error) {
@@ -40,7 +49,9 @@ func Solve() (err error) {
 		node  uint16
 		paths []Path
 	)
+	start := time.Now()
 	b, err = f.ReadFile("input.txt")
+	//b, err = f.ReadFile("example.txt")
 	if err != nil {
 		return
 	}
@@ -61,6 +72,7 @@ func Solve() (err error) {
 
 		}
 	}
+	paths = make([]Path, 0, 6)
 	for p.More() {
 		r = p.NextRow()
 		node = toUint16(r[0])
@@ -73,7 +85,6 @@ func Solve() (err error) {
 			})
 		}
 	}
-	fmt.Println(len(paths))
 	//part 1
 	var total1 uint64
 	next := uint16(0)
@@ -84,7 +95,8 @@ func Solve() (err error) {
 		total1++
 		next = n.nodes[next][n.instructions[i]]
 	}
-	fmt.Println(total1)
+	fmt.Println("part1 ", time.Since(start))
+	fmt.Println("part1: ", total1)
 
 	var total2 uint64
 	var pa *Path
@@ -98,33 +110,29 @@ func Solve() (err error) {
 			pa = &paths[j]
 			pa.curr = n.nodes[pa.curr][n.instructions[i]]
 			if pa.curr%tens == 25 && pa.end == 0 {
+				pa.toFind = total2
 				pa.end = pa.curr
-				fmt.Println("found end for path ", j)
 			}
-			if pa.visited[pa.curr] > 0 {
+			if pa.end > 0 && pa.visited[pa.curr] > 0 {
 				pa.cycle = total2
 				done = append(done, *pa)
-				//printStart(paths)
-				//fmt.Println("removing: ", pa.start)
-				// remove thy self
 				if j+1 < len(paths) {
 					copy(paths[j:], paths[j+1:])
 				}
-				paths = paths[:j]
+				paths = paths[:len(paths)-1]
 				j--
-				//printStart(paths)
-				//fmt.Println("removing path now at length", len(paths))
 
 			} else {
 				pa.visited[pa.curr] = total2
 			}
 		}
 	}
+	var toFindMul uint64 = 1
 	for _, p1 := range done {
-		fmt.Println(p1.ToString())
+		toFindMul = util.Lcd(toFindMul, p1.toFind)
 	}
 	// part 2
-	fmt.Println(total2)
+	fmt.Println(toFindMul)
 
 	return
 }

@@ -5,6 +5,10 @@ import (
 	"slices"
 )
 
+var (
+	Newline = []byte{'\n'}
+)
+
 type state uint8
 
 const (
@@ -15,12 +19,30 @@ const (
 	doneState
 )
 
+func (s state) ToString() string {
+	switch s {
+	case 0:
+		return "Start"
+	case 1:
+		return "Value"
+	case 2:
+		return "ValueEnd"
+	case 3:
+		return "RowEnd"
+	case 4:
+		return "Done"
+	default:
+		return fmt.Sprintf("not defined %d", s)
+	}
+}
+
 type TokenParser struct {
 	state     state
 	nextToken func(*TokenParser) Token
 	nextRow   func(*TokenParser) TokenSlice
 	currRow   TokenSlice
-	isSep     func(*TokenParser, byte)
+	isSep     func(*TokenParser, byte) state
+	adv       func(*TokenParser)
 	curr      uint64
 	sep       []byte
 	rowSep    []byte
@@ -29,15 +51,16 @@ type TokenParser struct {
 }
 
 func NewTokenParser(arr []byte) *TokenParser {
-	return NewTokenParserWithSeparators(arr, []byte{' '}, []byte{'\n'})
+	return NewTokenParserWithSeparators(arr, []byte{'\n'}, ' ')
 }
 
-func NewTokenParserWithSeparators(arr []byte, sep, rowSep []byte) *TokenParser {
+func NewTokenParserWithSeparators(arr []byte, rowSep []byte, sep ...byte) *TokenParser {
 	return &TokenParser{
 		state:     startState,
 		nextToken: (*TokenParser).stateValue,
 		nextRow:   (*TokenParser).stateRow,
 		isSep:     (*TokenParser).isSeparatorSetState,
+		adv:       (*TokenParser).advance,
 		sep:       sep,
 		rowSep:    rowSep,
 		len:       uint64(len(arr)),
@@ -73,17 +96,24 @@ func (p *TokenParser) stateValue() Token {
 			if i+1 == p.len {
 				p.curr = p.len
 				p.state = doneState
-				return p.arr[s:p.len]
+				lastState := p.getState(p.arr[i])
+				if lastState == valueState {
+					return p.arr[s:p.len]
+				}
+
+				return p.arr[s:i]
 			}
-			p.isSepSet(p.arr[i])
+			p.state = p.getState(p.arr[i])
 			if p.state == valueState {
 				continue
 			}
-			p.curr = i + 1
+			p.curr = i
+			// read until next value to check end of line
+			p.AdvanceUntilVal()
 			return p.arr[s:i]
 		}
 		if p.state != valueState {
-			p.isSepSet(p.arr[i])
+			p.state = p.getState(p.arr[i])
 			if p.state == valueState {
 				s = i
 			}
@@ -108,21 +138,37 @@ func (p *TokenParser) stateRow() TokenSlice {
 	}
 }
 
-func (p *TokenParser) isSepSet(b byte) {
-	p.isSep(p, b)
+func (p *TokenParser) AdvanceUntilVal() {
+	p.adv(p)
 }
 
-func (p *TokenParser) isSeparatorSetState(b byte) {
+func (p *TokenParser) advance() {
+	nextState := p.state
+	for i := p.curr; i+1 < p.len; i++ {
+		p.state = nextState
+		nextState = p.getState(p.arr[i+1])
+		if nextState == valueState {
+			p.curr = i
+			return
+		}
+	}
+	p.curr = p.len
+	p.state = doneState
+}
+
+func (p *TokenParser) getState(b byte) state {
+	return p.isSep(p, b)
+}
+func (p *TokenParser) isSeparatorSetState(b byte) state {
 	if slices.Contains(p.sep, b) {
-		p.state = valueEndState
-		return
+		return valueEndState
+
 	}
 	if slices.Contains(p.rowSep, b) {
-		p.state = rowEndState
-		return
+		return rowEndState
+
 	}
-	p.state = valueState
-	return
+	return valueState
 }
 
 type Token []byte

@@ -15,6 +15,7 @@ type network struct {
 	nodes        [17576][2]uint16
 }
 
+// Path describes a path, visited and cycle can be removed assuming only 1 exit node per path
 type Path struct {
 	start, curr, end uint16
 	visited          [17576]uint64
@@ -49,7 +50,7 @@ func Solve() (err error) {
 		node  uint16
 		paths []Path
 	)
-	start := time.Now()
+
 	b, err = f.ReadFile("input.txt")
 	//b, err = f.ReadFile("example.txt")
 	if err != nil {
@@ -85,6 +86,7 @@ func Solve() (err error) {
 			})
 		}
 	}
+	start := time.Now()
 	//part 1
 	var total1 uint64
 	next := uint16(0)
@@ -95,9 +97,10 @@ func Solve() (err error) {
 		total1++
 		next = n.nodes[next][n.instructions[i]]
 	}
-	fmt.Println("part1 ", time.Since(start))
-	fmt.Println("part1: ", total1)
+	fmt.Printf("part1 in %v: %d\n", time.Since(start), total1)
+	start = time.Now()
 
+	// part2
 	var total2 uint64
 	var pa *Path
 	done := make([]Path, 0, len(paths))
@@ -127,12 +130,12 @@ func Solve() (err error) {
 			}
 		}
 	}
-	var toFindMul uint64 = 1
+	var toFindMul = uint64(len(n.instructions))
 	for _, p1 := range done {
 		toFindMul = util.Lcd(toFindMul, p1.toFind)
 	}
-	// part 2
-	fmt.Println(toFindMul)
+	// this might find wrong answer since it could be earlier if a long cycle contains more than one exit node
+	fmt.Printf("part2 in %v: %d\n", time.Since(start), toFindMul)
 
 	return
 }

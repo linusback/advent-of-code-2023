@@ -1,2 +1,6 @@
 14449445933179
 Time elapsed: 1.360288ms
+
+part1 in 35.498µs: 18023
+part2 in 161.715µs: 14449445933179
+Time elapsed: 354.649µs

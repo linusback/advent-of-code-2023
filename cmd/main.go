@@ -1,7 +1,7 @@
 package main
 
 import (
-	"advent-of-code-2023/pkg/day9"
+	"advent-of-code-2023/pkg/day10"
 	"fmt"
 	"time"
 )
@@ -16,5 +16,5 @@ func timeFunction(function func() error) {
 	fmt.Println("Time elapsed:", time.Since(start))
 }
 func main() {
-	timeFunction(day9.Solve)
+	timeFunction(day10.Solve)
 }

@@ -12,6 +12,7 @@ func timeFunction(function func() error) {
 	if err != nil {
 		fmt.Println("error", err)
 	}
+
 	fmt.Println("Time elapsed:", time.Since(start))
 }
 func main() {

@@ -1,5 +1,20 @@
 package util
 
+func MapToUintArr[M ~map[K]K, K comparable](m M) ([]uint, map[K]uint) {
+	arr := make([]K, len(m))
+	res := make([]uint, len(m))
+	rm := make(map[K]uint, len(m))
+	i := 0
+	for k, v := range m {
+		arr[i] = v
+		rm[k] = uint(i)
+	}
+	for j := 0; j < len(arr); j++ {
+		res[i] = rm[arr[j]]
+	}
+	return res, rm
+}
+
 func MapToSelfReferringArrUint16[M ~map[K][]K, K comparable](m M) ([][]uint16, map[K]uint16) {
 	arr := make([][]K, len(m))
 	rm := make(map[K]uint16, len(m))

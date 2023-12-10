@@ -17,8 +17,10 @@ type network struct {
 
 // Path describes a path, visited and cycle can be removed assuming only 1 exit node per path
 type Path struct {
-	start, curr uint16
-	toFind      uint64
+	start, curr          uint16
+	cycleEnds, cycleLens []uint64
+	cycles               []string
+	cycle                []uint16
 }
 
 func Solve() (err error) {
@@ -28,6 +30,7 @@ func Solve() (err error) {
 		n     network
 		node  uint16
 		paths []Path
+		arr2  [][]uint16
 	)
 
 	b, err = f.ReadFile("input.txt")
@@ -59,53 +62,29 @@ func Solve() (err error) {
 	z := uint16(6)
 	for p.More() {
 		r = p.NextRow()
-		if r[0][2] == 'A' {
+		switch r[0][2] {
+		case 'A':
 			node = uint16(len(paths))
 			paths = append(paths, Path{
 				start: node,
 				curr:  node,
 			})
-			arr[node] = []string{string(r[0]), string(r[1]), string(r[2])}
-			nMap[string(r[0])] = node
-			continue
-		}
-
-		if r[0][2] == 'Z' {
+		case 'Z':
 			node = uint16(len(arr)) - 1 - exitNodes
-			arr[node] = []string{string(r[0]), string(r[1]), string(r[2])}
-			nMap[string(r[0])] = node
 			exitNodes++
-			continue
+		default:
+			node = z
+			z++
 		}
-		node = z
 		arr[node] = []string{string(r[0]), string(r[1]), string(r[2])}
 		nMap[string(r[0])] = node
-		z++
 
 	}
-	var arr2 [][]uint16
+
 	arr2, nMap = util.ToSelfReferringArrUint16(arr, nMap)
 	for i := 0; i < len(arr2); i++ {
 		copy(n.nodes[i][:], arr2[i])
 	}
-
-	//var left, right string
-	//for s, u := range nMap {
-	//	if s[2] == 'Z' {
-	//
-	//		for s2, u2 := range nMap {
-	//			if u2 == n.nodes[u][0] {
-	//				left = s2
-	//			}
-	//			if u2 == n.nodes[u][1] {
-	//				right = s2
-	//			}
-	//		}
-	//		fmt.Println(s, ": ", u, " = ", left, ", ", right)
-	//	}
-	//}
-	//fmt.Println(len(arr) - 1 - int(exitNodes))
-	//return
 
 	start := time.Now()
 
@@ -124,49 +103,89 @@ func Solve() (err error) {
 	start = time.Now()
 
 	// part2
-	var total2 uint64
-	var pa *Path
-	var found int
+	var (
+		pa                         *Path
+		cycStr                     string
+		total2, cycleEnd, cycleLen uint64
+	)
 	normalNodes := uint16(len(arr)) - 1 - exitNodes
 	done := make([]Path, 0, len(paths))
-	start2 := time.Now()
-	for i := 0; total2 <= 14449445933179; i++ {
+	for i := 0; 0 < len(paths); i++ {
 		if i == len(n.instructions) {
 			i = 0
 		}
 		total2++
-		found = 0
-		if total2%100000000 == 0 {
-			fmt.Printf("at %d it took %v\n", total2, time.Since(start2))
-			start2 = time.Now()
-		}
+	pathLoop:
 		for j := 0; j < len(paths); j++ {
 			pa = &paths[j]
+			pa.cycle = append(pa.cycle, pa.curr)
 			pa.curr = n.nodes[pa.curr][n.instructions[i]]
 			if pa.curr > normalNodes {
-				found++
-				//pa.toFind = total2
-				//done = append(done, *pa)
-				//if j+1 < len(paths) {
-				//	// move one instead of all
-				//	paths[j] = paths[len(paths)-1]
-				//}
-				//paths = paths[:len(paths)-1]
-				//j--
+				cycleEnd = uint64(i)
+				cycStr = util.Uint16ToString(pa.cycle)
+				cycleLen = uint64(len(pa.cycle))
+
+				pa.cycle = pa.cycle[:0]
+				for k := 0; k < len(pa.cycleEnds); k++ {
+					if pa.cycleEnds[k] == cycleEnd && pa.cycles[k] == cycStr {
+						done = append(done, *pa)
+						if j+1 < len(paths) {
+							// move one instead of all
+							paths[j] = paths[len(paths)-1]
+						}
+						paths = paths[:len(paths)-1]
+						j--
+						continue pathLoop
+					}
+				}
+
+				pa.cycleEnds = append(pa.cycleEnds, uint64(i))
+				pa.cycles = append(pa.cycles, cycStr)
+				pa.cycleLens = append(pa.cycleLens, cycleLen)
 			}
 		}
-		if found == len(paths) {
-			break
-		}
 	}
-	var toFindMul = uint64(len(n.instructions))
-	for _, p1 := range done {
-		toFindMul = util.Lcd(toFindMul, p1.toFind)
+
+	numbers := make([][]uint64, len(done))
+	var (
+		toFindMul, result2 uint64
+		cycles             []uint64
+		last               uint64
+	)
+	for i := 0; i < len(done); i++ {
+		cycles = util.FilterUnique(done[i].cycleLens)
+		last = 0
+		for j := 0; j < len(cycles); j++ {
+			cycles[j] += last
+			last = cycles[j]
+
+		}
+		numbers[i] = cycles
+	}
+	numbers = util.Permutate(numbers)
+	//fmt.Println(numbers)
+	result2 = ^uint64(0)
+	for i := 0; i < len(numbers); i++ {
+		toFindMul = uint64(len(n.instructions))
+		for j := 0; j < len(numbers[i]); j++ {
+			toFindMul = util.Lcd(toFindMul, numbers[i][j])
+		}
+		if result2 > toFindMul {
+			result2 = toFindMul
+		}
 	}
 	// this might find wrong answer since it could be earlier if a long cycle contains more than one exit node
 	fmt.Printf("part2 in %v: %d\n", time.Since(start), toFindMul)
 
 	return
+}
+
+func ToString(u []uint16, m *map[uint16]string) string {
+	s := make([]byte, len(u)*3)
+	for i := 0; i < len(u); i++ {
+		copy(s[i*3:], (*m)[u[i]])
+	}
+	return string(s)
 }
 
 func printStart(paths []Path) {
@@ -175,29 +194,4 @@ func printStart(paths []Path) {
 		s = append(s, fmt.Sprintf("%d", p.start))
 	}
 	fmt.Println(s)
-}
-
-const (
-	hundreds = uint16(26 * 26)
-	tens     = uint16(26)
-)
-
-// change to uint16 with base 26 so AAA = 0 AND ZZZ = 17575 (26*26*26 - 1)
-func toUint16(b []byte) uint16 {
-	var r uint16
-	if len(b) != 3 {
-		panic(fmt.Sprintf("wrong length of %s", string(b)))
-	}
-	r += uint16(b[0]-'A') * hundreds
-	r += uint16(b[1]-'A') * tens
-	r += uint16(b[2] - 'A')
-	return r
-}
-
-func toString(u uint16) string {
-	var b [3]byte
-	b[2] = byte(u%tens) + 'A'
-	b[1] = byte((u%hundreds)/tens) + 'A'
-	b[0] = byte(u/hundreds) + 'A'
-	return string(b[:])
 }

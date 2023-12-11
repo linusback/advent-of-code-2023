@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"strconv"
 )
 
 //go:embed *.txt
@@ -16,8 +15,8 @@ type point struct {
 }
 
 var (
-	columnMap, rowMap [140][140]int
-	columns, rows     [140]int
+	columnMap, rowMap [140][140]uint8
+	columns, rows     [140]uint8
 )
 
 const galaxyByte byte = '#'
@@ -53,7 +52,7 @@ func Solve() (res1, res2 int64, err error) {
 		copy(tiles[i][:], buff)
 	}
 	//tiles := bytes.Split(b, []byte{'\n'})
-	galaxies := 0
+	galaxies := uint8(0)
 	//fmt.Printf("setup %v\n", time.Since(start))
 	//start = time.Now()
 	gal = make([]point, 0, 440)
@@ -137,31 +136,26 @@ func sumDistance(arr []point) (res1, res2 int64) {
 	return res1, res2
 }
 
-const part2Mul = 1_000_000 - 1
+const part2Mul int64 = 1_000_000 - 1
 
 //const part2Mul = 99
 
-func sumDistanceBetweenPoints(x1, x2, y1, y2 int) (int64, int64) {
-	var part1, part2, tmp int
-	part1 = columnMap[x1][x2]
-	part2 = part1 * part2Mul
+func sumDistanceBetweenPoints(x1, x2, y1, y2 int) (res1 int64, res2 int64) {
+	var (
+		expanse int64
+	)
+	res1 = int64(x2 - x1 + y2 - y1)
+	res2 = res1
 
-	tmp = rowMap[y1][y2]
-	part1 += tmp
-	part2 += tmp * part2Mul
+	expanse = int64(columnMap[x1][x2])
 
-	tmp = x2 - x1 + y2 - y1
-	//fmt.Printf("len between %d and %d is %d\n", p[0].name, p[1].name, x+y+part1)
-	return int64(tmp + part1), int64(tmp + part2)
-}
+	res1 += expanse
+	res2 += expanse * part2Mul
 
-func getExpanseBetween(from, to int, list []int) (res int) {
-	if to-from == 1 {
-		return 0
-	}
-	for i := from + 1; i < to; i++ {
-		res += list[i]
-	}
+	expanse = int64(rowMap[y1][y2])
+
+	res1 += expanse
+	res2 += expanse * part2Mul
 	return
 }
 
@@ -183,7 +177,7 @@ func createPairs(arr []int) (res [][]int) {
 }
 
 func createPairKnownColumns() {
-	rowsCount := 0
+	rowsCount := uint8(0)
 	for i := 0; i < 140; i++ {
 		rowsCount = 0
 		for k := 0; k < 140; k++ {
@@ -200,67 +194,18 @@ func createPairKnownColumns() {
 }
 
 func createPairKnownRows() {
-	rowCount := 0
+	rowsCount := uint8(0)
 	for i := 0; i < 140; i++ {
-		rowCount = 0
+		rowsCount = 0
 		for k := 0; k < 140; k++ {
 			if k >= i+1 && rows[k] == 1 {
-				rowCount++
+				rowsCount++
 			}
-			if rowCount == 0 {
+			if rowsCount == 0 {
 				continue
 			}
-			rowMap[i][k] = rowCount
+			rowMap[i][k] = rowsCount
 		}
 	}
 	return
-}
-
-func findPairs[A ~[]K, K any](arr A) (res []A) {
-	res = make([]A, 0, 96141)
-	for i := 0; i < len(arr); i++ {
-		for k := i + 1; k < len(arr); k++ {
-			e := make([]K, 2)
-			e[0] = arr[i]
-			e[1] = arr[k]
-			res = append(res, e)
-		}
-	}
-	return res
-}
-
-func createColumn(b3 [][]byte, i, offset int) {
-	col := i + offset
-
-	for y := 0; y < len(b3); y++ {
-		m := make([]byte, len(b3[y])+1)
-		copy(m, b3[y][:col])
-		m[col] = '.'
-		copy(m[col+1:], b3[y][col:])
-		b3[y] = m
-	}
-}
-func printMap(b3 [][]byte) {
-	for y := 0; y < len(b3); y++ {
-		fmt.Println(string(b3[y]))
-	}
-}
-
-func printMapWithPoints(b3 [][]byte, gal []point) {
-
-	for y := 0; y < len(b3); y++ {
-		by := make([]byte, len(b3[y]))
-		copy(by, b3[y])
-		for i := 0; i < len(by); i++ {
-			if by[i] == '#' {
-				for _, p := range gal {
-					if p.x == i && p.y == y {
-						by[i] = ([]byte(strconv.Itoa(p.name)))[0]
-						break
-					}
-				}
-			}
-		}
-		fmt.Println(string(by))
-	}
 }

@@ -1,39 +1,7 @@
 package util
 
-import "slices"
-
-func Unique[S ~[]K, K comparable](s S) []K {
-	res := make([]K, 0, len(s))
-	for i := 0; i < len(s); i++ {
-		if !slices.Contains(res, s[i]) {
-			res = append(res, s[i])
-		}
-	}
-	return res
-}
-func FilterUnique[S ~[]K, K comparable](s S) []K {
-	found := false
-	for i := 0; i < len(s); i++ {
-		found = false
-		for j := 0; j < i; j++ {
-			if s[i] == s[j] {
-				found = true
-				break
-			}
-		}
-		if !found {
-			continue
-		}
-		if i+1 < len(s) {
-			//use copy to preserve order
-			copy(s[i:], s[i+1:])
-			// move one instead of all
-			//s[i] = s[len(s)-1]
-		}
-		s = s[:len(s)-1]
-		i--
-	}
-	return s
+func ValidCoordinate(x, y, lenX, lenY int64) bool {
+	return x >= 0 && y >= 0 && x < lenX && y < lenY
 }
 
 func Permutate[S ~[][]K, K comparable](s S) [][]K {

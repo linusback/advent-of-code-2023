@@ -4,6 +4,7 @@ import (
 	"advent-of-code-2023/pkg/util"
 	"embed"
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -153,7 +154,7 @@ func Solve() (err error) {
 		last               uint64
 	)
 	for i := 0; i < len(done); i++ {
-		cycles = util.FilterUnique(done[i].cycleLens)
+		cycles = slices.Compact(done[i].cycleLens)
 		last = 0
 		for j := 0; j < len(cycles); j++ {
 			cycles[j] += last

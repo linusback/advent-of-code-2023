@@ -30,7 +30,7 @@ func Solve() (res1, res2 int64, err error) {
 		i, n     int
 		galaxies uint8
 
-		rowE, res1t, res2t, x uint64
+		rowE, res1t, res2t, x, prev1, prev2 uint64
 	)
 	fil, err = f.Open("input.txt")
 	if err != nil {
@@ -76,7 +76,7 @@ func Solve() (res1, res2 int64, err error) {
 					yExp2: y + rowE*part2Mul,
 					name:  len(gal) + 1,
 				})
-				res1t, res2t = calculateY(gal, res1t, res2t)
+				res1t, res2t, prev1, prev2 = calculateY(gal, res1t, res2t, prev1, prev2)
 				colGal[x] = append(colGal[x], &gal[len(gal)-1])
 			}
 		}
@@ -85,64 +85,47 @@ func Solve() (res1, res2 int64, err error) {
 		}
 	}
 
-	var colE uint64
+	prev1, prev2 = 0, 0
+	x = 0
+	rowE = 0
 	for z := 0; z < len(columns); z++ {
 		if columns[z] > 0 {
 			for i = 0; i < len(colGal[z]); i++ {
 
-				colGal[z][i].xExp = colGal[z][i].x + colE
-				colGal[z][i].xExp2 = colGal[z][i].x + colE*part2Mul
-				res1t, res2t = calculateX(colGal[z][i], res1t, res2t, colGal[z][:i], colGal[:z]...)
+				colGal[z][i].xExp = colGal[z][i].x + rowE
+				colGal[z][i].xExp2 = colGal[z][i].x + rowE*part2Mul
+				res1t, res2t, prev1, prev2 = calculateX(colGal[z][i], res1t, res2t, prev1, prev2, x)
+				x++
 			}
 			continue
 		}
-		colE++
+		rowE++
 	}
 
-	//res1t, res2t := sumDistance(gal)
 	res1, res2 = int64(res1t), int64(res2t)
 	return
 }
 
-func calculateY(gal []point, t, t2 uint64) (uint64, uint64) {
+func calculateY(gal []point, t1, t2, prev1, prev2 uint64) (uint64, uint64, uint64, uint64) {
 	var p *point
-	p = &gal[len(gal)-1]
 	mul := uint64(len(gal) - 1)
-	t += p.yExp * mul
-	t2 += p.yExp2 * mul
-	for i := 0; i < len(gal)-1; i++ {
-		p = &gal[i]
-		t -= p.yExp
-		t2 -= p.yExp2
-	}
-	return t, t2
+	p = &gal[mul]
+
+	t1 += p.yExp*mul - prev1
+	t2 += p.yExp2*mul - prev2
+
+	prev1 += p.yExp
+	prev2 += p.yExp2
+
+	return t1, t2, prev1, prev2
 }
 
-func calculateX(chosen *point, t, t2 uint64, curr []*point, arr ...[]*point) (uint64, uint64) {
-	var (
-		p       *point
-		j, lenJ int
-		mul     uint64
-	)
+func calculateX(p *point, t1, t2, prev1, prev2, mul uint64) (uint64, uint64, uint64, uint64) {
+	t1 += p.xExp*mul - prev1
+	t2 += p.xExp2*mul - prev2
 
-	for i := 0; i < len(arr); i++ {
-		lenJ = len(arr[i])
-		mul = uint64(lenJ)
-		t += chosen.xExp * mul
-		t2 += chosen.xExp2 * mul
-		for j = 0; j < lenJ; j++ {
-			p = arr[i][j]
-			t -= p.xExp
-			t2 -= p.xExp2
-		}
-	}
-	mul = uint64(len(curr))
-	t += chosen.xExp * mul
-	t2 += chosen.xExp2 * mul
-	for j = 0; j < len(curr); j++ {
-		p = curr[j]
-		t -= p.xExp
-		t2 -= p.xExp2
-	}
-	return t, t2
+	prev1 += p.xExp
+	prev2 += p.xExp2
+
+	return t1, t2, prev1, prev2
 }

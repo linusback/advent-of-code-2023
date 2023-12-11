@@ -2,7 +2,6 @@ package day11
 
 import (
 	"embed"
-	"fmt"
 	"io"
 	"io/fs"
 )
@@ -11,204 +10,129 @@ import (
 var f embed.FS
 
 type point struct {
-	x, y uint64
-	//pairX, pairY uint8
+	x, y         uint64
+	xExp, yExp   uint64
+	xExp2, yExp2 uint64
+
 	name int
 }
 
-var (
-	columnMap, rowMap [140][140]uint8
-	columns, rows     [140]uint8
+const (
+	galaxyByte byte   = '#'
+	part2Mul   uint64 = 1_000_000 - 1
+	//part2Mul uint64 = 99
 )
-
-const galaxyByte byte = '#'
 
 func Solve() (res1, res2 int64, err error) {
 	var (
-		fil fs.File
-		gal []point
+		fil      fs.File
+		gal      []point
+		i, n     int
+		galaxies uint8
+
+		rowE, res1t, res2t, x uint64
 	)
 	fil, err = f.Open("input.txt")
 	if err != nil {
 		return
 	}
 	tiles := [140][140]byte{}
+	columns := [140]uint8{}
+	//tiles := [10][10]byte{}
+	//columns := [10]uint8{}
 
-	//fil, err = f.Open("example.txt")
-	//if err != nil {
-	//	return
-	//}
-	//tiles := [][]byte{}
-
-	//start := time.Now()
 	buff := make([]byte, 141)
-	n := 0
-	for i := 0; i < len(tiles); i++ {
+	//buff := make([]byte, 11)
+
+	gal = make([]point, 0, 440)
+
+	for ; i < len(tiles); i++ {
 		n, err = fil.Read(buff)
-		if n < 140 {
-			err = fmt.Errorf("failed to read enougth row: %d, n: %d", i, n)
-		}
 		if err != nil && err != io.EOF {
 			return
 		}
-		copy(tiles[i][:], buff)
+		if err == io.EOF {
+			break
+		}
+		copy(tiles[i][:], buff[:n])
 	}
-	//tiles := bytes.Split(b, []byte{'\n'})
-	galaxies := uint8(0)
-	//fmt.Printf("setup %v\n", time.Since(start))
-	//start = time.Now()
-	gal = make([]point, 0, 440)
+
+	colGal := make([][]*point, len(tiles[0]))
+
+	for z := 0; z < len(colGal); z++ {
+		colGal[z] = make([]*point, 0, 6)
+	}
+
 	for y := uint64(0); y < uint64(len(tiles)); y++ {
 		galaxies = 0
-		for x := uint64(0); x < uint64(len(tiles[y])); x++ {
+		for x = 0; x < uint64(len(tiles[y])); x++ {
 			if tiles[y][x] == galaxyByte {
-				galaxies++
 				columns[x]++
+				galaxies++
 				gal = append(gal, point{
-					x:    x,
-					y:    y,
-					name: len(gal) + 1,
+					x:     x,
+					y:     y,
+					yExp:  y + rowE,
+					yExp2: y + rowE*part2Mul,
+					name:  len(gal) + 1,
 				})
+				res1t, res2t = calculateY(gal, res1t, res2t)
+				colGal[x] = append(colGal[x], &gal[len(gal)-1])
 			}
 		}
-		rows[y] = galaxies
+		if galaxies == 0 {
+			rowE++
+		}
 	}
-	for x := 0; x < len(columns); x++ {
-		if columns[x] > 0 {
-			columns[x] = 0
+
+	var colE uint64
+	for z := 0; z < len(columns); z++ {
+		if columns[z] > 0 {
+			for i = 0; i < len(colGal[z]); i++ {
+
+				colGal[z][i].xExp = colGal[z][i].x + colE
+				colGal[z][i].xExp2 = colGal[z][i].x + colE*part2Mul
+				res1t, res2t = calculateX(colGal[z][i], res1t, res2t, colGal[z][:i], colGal[:z]...)
+			}
 			continue
 		}
-		columns[x] = 1
-	}
-	for y := 0; y < len(rows); y++ {
-		if rows[y] > 0 {
-			rows[y] = 0
-			continue
-		}
-		rows[y] = 1
+		colE++
 	}
 
-	//columnMap := createPairs(columns)
-	//rowMap := createPairs(rows)
-
-	createPairKnownColumns()
-	createPairKnownRows()
-
-	//fmt.Println(len(rows))
-	//fmt.Printf("parsing %v\n", time.Since(start))
-	//start = time.Now()
-
-	//pairs := findPairs(gal)
-	//fmt.Printf("find pairs %v\n", time.Since(start))
-	//fmt.Println(len(pairs))
-	//start = time.Now()
-
-	//fmt.Println(rows)
-	//fmt.Println(columns)
-	//printMap(b3)
-	//printMapWithPoints(b3, gal)
-	res1t, res2t := sumDistance(gal)
+	//res1t, res2t := sumDistance(gal)
 	res1, res2 = int64(res1t), int64(res2t)
-	//fmt.Printf("find result %v\n", time.Since(start))
-	//fmt.Println(result1)
-	//fmt.Println(result2)
 	return
 }
 
-func sumDistance(arr []point) (res1, res2 uint64) {
-	var x1, x2, y1, y2 uint64
-	var r1, r2 uint64
-	lenA := len(arr)
-	for i := 0; i < lenA; i++ {
-		for k := i + 1; k < lenA; k++ {
-			x1 = arr[i].x
-			x2 = arr[k].x
-			y1 = arr[i].y
-			y2 = arr[k].y
-			if arr[i].x > arr[k].x {
-				x1, x2 = x2, x1
-			}
-			if arr[i].y > arr[k].y {
-				y1, y2 = y2, y1
-			}
-			r1, r2 = sumDistanceBetweenPoints(x1, x2, y1, y2)
-			res1 += r1
-			res2 += r2
-		}
+func calculateY(gal []point, t, t2 uint64) (uint64, uint64) {
+	var p, chosen *point
+	chosen = &gal[len(gal)-1]
+	for i := 0; i < len(gal)-1; i++ {
+		p = &gal[i]
+		t += chosen.yExp - p.yExp
+		t2 += chosen.yExp2 - p.yExp2
 	}
-	return res1, res2
+	return t, t2
 }
 
-const part2Mul uint64 = 1_000_000 - 1
-
-//const part2Mul = 99
-
-func sumDistanceBetweenPoints(x1, x2, y1, y2 uint64) (res1 uint64, res2 uint64) {
+func calculateX(chosen *point, t, t2 uint64, curr []*point, arr ...[]*point) (uint64, uint64) {
 	var (
-		expanse uint8
+		p       *point
+		j, lenJ int
 	)
-	res1 = x2 - x1 + y2 - y1
-	res2 = res1
 
-	expanse = columnMap[x1][x2]
-
-	res1 += uint64(expanse)
-	res2 += uint64(expanse) * part2Mul
-
-	expanse = rowMap[y1][y2]
-
-	res1 += uint64(expanse)
-	res2 += uint64(expanse) * part2Mul
-	return
-}
-
-func createPairs(arr []int) (res [][]int) {
-	rowsCount := 0
-	res = make([][]int, 0, len(arr))
 	for i := 0; i < len(arr); i++ {
-		res = append(res, make([]int, 0, len(arr)))
-		rowsCount = 0
-		res[i] = append(res[i], rowsCount)
-		for k := 0; k < len(arr); k++ {
-			if k >= i+1 && arr[k] == 1 {
-				rowsCount++
-			}
-			res[i] = append(res[i], rowsCount)
+		lenJ = len(arr[i])
+		for j = 0; j < lenJ; j++ {
+			p = arr[i][j]
+			t += chosen.xExp - p.xExp
+			t2 += chosen.xExp2 - p.xExp2
 		}
 	}
-	return
-}
-
-func createPairKnownColumns() {
-	rowsCount := uint8(0)
-	for i := 0; i < 140; i++ {
-		rowsCount = 0
-		for k := 0; k < 140; k++ {
-			if k >= i+1 && columns[k] == 1 {
-				rowsCount++
-			}
-			if rowsCount == 0 {
-				continue
-			}
-			columnMap[i][k] = rowsCount
-		}
+	for j = 0; j < len(curr); j++ {
+		p = curr[j]
+		t += chosen.xExp - p.xExp
+		t2 += chosen.xExp2 - p.xExp2
 	}
-	return
-}
-
-func createPairKnownRows() {
-	rowsCount := uint8(0)
-	for i := 0; i < 140; i++ {
-		rowsCount = 0
-		for k := 0; k < 140; k++ {
-			if k >= i+1 && rows[k] == 1 {
-				rowsCount++
-			}
-			if rowsCount == 0 {
-				continue
-			}
-			rowMap[i][k] = rowsCount
-		}
-	}
-	return
+	return t, t2
 }

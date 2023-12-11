@@ -5,16 +5,19 @@ find result 4.364711ms
 447744640566
 Time elapsed: 4.449842ms
 
-
-res1:  9522698
-res1:  434404653906
-Time elapsed: 780.963µs
-
 res1:  9536038
 res1:  447744640566
 Time elapsed: 781.051µs
 
 
 result 1:  9536038
-result 2:  5017925070381
-Time elapsed: 503.644µs
+result 2:  447744640566
+Time elapsed: 341.587µs
+
+result 1:  9536038
+result 2:  447744640566
+Time elapsed: 331.21µs
+
+result 1:  9536038
+result 2:  447744640566
+Time elapsed: 184.543µs

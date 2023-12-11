@@ -39,3 +39,10 @@ result 1:  9536038
 result 2:  447744640566
 Time elapsed: 51.895µs
 
+result 1:  9536038
+result 2:  447744640566
+Time elapsed: 47.478µs
+
+result 1:  9536038
+result 2:  447744640566
+Time elapsed: 57.95µs

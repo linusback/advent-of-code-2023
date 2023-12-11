@@ -22,7 +22,7 @@ func Solve() (res1, res2 int64, err error) {
 		buff     [colLen + 1]byte
 		columns  [colLen]uint8
 
-		expanse, res1t, res2t, x, prev1, prev2, mul, e1, e2 uint64
+		expanse1, expanse2, res1t, res2t, x, prev1, prev2, mul, e1, e2 uint64
 	)
 
 	fil, err = f.Open("input.txt")
@@ -40,15 +40,16 @@ func Solve() (res1, res2 int64, err error) {
 			if buff[x] == galaxyByte {
 				columns[x]++
 				galaxies++
-				e1 = y + expanse
-				e2 = y + expanse*part2Mul
+				e1 = y + expanse1
+				e2 = y + expanse2
 
 				res1t, res2t, prev1, prev2 = calculate(e1, e2, res1t, res2t, prev1, prev2, mul)
 				mul++
 			}
 		}
 		if galaxies == 0 {
-			expanse++
+			expanse1++
+			expanse2 += part2Mul
 		}
 		if err == io.EOF {
 			break
@@ -58,18 +59,20 @@ func Solve() (res1, res2 int64, err error) {
 	prev1, prev2 = 0, 0
 	x = 0
 	mul = 0
-	expanse = 0
+	expanse1 = 0
+	expanse2 = 0
 	for ; x < colLen; x++ {
 		if columns[x] > 0 {
 			for galaxies = 0; galaxies < columns[x]; galaxies++ {
-				e1 = x + expanse
-				e2 = x + expanse*part2Mul
+				e1 = x + expanse1
+				e2 = x + expanse2
 				res1t, res2t, prev1, prev2 = calculate(e1, e2, res1t, res2t, prev1, prev2, mul)
 				mul++
 			}
 			continue
 		}
-		expanse++
+		expanse1++
+		expanse2 += part2Mul
 	}
 
 	res1, res2 = int64(res1t), int64(res2t)

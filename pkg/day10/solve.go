@@ -51,7 +51,7 @@ func Solve() (err error) {
 		start *Tile
 	)
 	startTime := time.Now()
-	b, err = f.ReadFile("example2.txt")
+	b, err = f.ReadFile("input.txt")
 	if err != nil {
 		return
 	}
@@ -90,11 +90,11 @@ func Solve() (err error) {
 	fmt.Printf("part1: %d in: %v\n", result1, time.Since(startTime))
 	startTime = time.Now()
 
-	tiles.PrintVals()
-	fmt.Println()
-	tiles.PrintTypes()
+	//tiles.PrintVals()
+	//fmt.Println()
+	//tiles.PrintTypes()
 	result2 := tiles.SetTypes()
-	tiles.PrintTypes()
+	//tiles.PrintTypes()
 	fmt.Printf("part2: %d in: %v\n", result2, time.Since(startTime))
 
 	return
@@ -125,50 +125,39 @@ func (ts *Tiles) SetTypes() uint64 {
 	columns := make([][2]int, len((*ts)[0]))
 	for y := 0; y < len(*ts); y++ {
 		top, bottom = 0, 0
-
+		//fmt.Println("y: ", y, len((*ts)[y])-1)
+		//fmt.Println("x|top,bot,lef,rig")
 		for x := 0; x < len((*ts)[y]); x++ {
 			t = ts.GetCorr(x, y)
 			if t.tt == unknown {
 				t.tt = outside
-				minH, minV = columns[y][0], top
+				minH, minV = columns[x][0], top
 				if minV > bottom {
 					minV = bottom
 				}
-				if minH > columns[y][1] {
-					minH = columns[y][1]
+				if minH > columns[x][1] {
+					minH = columns[x][1]
 				}
+				//if y == 6 {
+				//
+				//	fmt.Printf("%d not|  %d,  %d,  %d,  %d\n", t.x, top, bottom, columns[x][0], columns[x][1])
+				//}
+				//fmt.Println(y, x, minV, minH)
 				if minV%2 == 1 && minH%2 == 1 {
 					t.tt = inside
 					result++
 				}
 				continue
 			}
+			//fmt.Printf("%d|  %d,  %d,  %d,  %d,  %c\n", t.x, t.top, t.bottom, t.left, t.right, t.b)
 			top += t.top
 			bottom += t.bottom
-			columns[y][0] += t.left
-			columns[y][1] += t.right
+			columns[x][0] += t.left
+			columns[x][1] += t.right
 		}
 	}
+	//fmt.Println(columns)
 	return result
-}
-
-func (t *Tile) SetType(tl *Tiles) {
-	var isInside bool
-	if t.tt != unknown {
-		return
-	}
-	isInside = searchHorizontal((*tl)[t.y][:t.x])
-	isInside = isInside && searchVertical(tl, t.x, t.y)
-}
-func searchVertical(tl *Tiles, x, y int64) bool { return false }
-func searchHorizontal(tiles []Tile) bool {
-	//var top, bottom int
-	for i := 0; i < len(tiles); i++ {
-		switch tiles[i].b {
-
-		}
-	}
-	return false
 }
 
 func (t *Tile) SetPipeStruct() {

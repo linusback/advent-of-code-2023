@@ -11,7 +11,9 @@ import (
 var f embed.FS
 
 type point struct {
-	x, y, name int
+	x, y uint64
+	//pairX, pairY uint8
+	name int
 }
 
 var (
@@ -56,9 +58,9 @@ func Solve() (res1, res2 int64, err error) {
 	//fmt.Printf("setup %v\n", time.Since(start))
 	//start = time.Now()
 	gal = make([]point, 0, 440)
-	for y := 0; y < len(tiles); y++ {
+	for y := uint64(0); y < uint64(len(tiles)); y++ {
 		galaxies = 0
-		for x := 0; x < len(tiles[y]); x++ {
+		for x := uint64(0); x < uint64(len(tiles[y])); x++ {
 			if tiles[y][x] == galaxyByte {
 				galaxies++
 				columns[x]++
@@ -105,16 +107,17 @@ func Solve() (res1, res2 int64, err error) {
 	//fmt.Println(columns)
 	//printMap(b3)
 	//printMapWithPoints(b3, gal)
-	res1, res2 = sumDistance(gal)
+	res1t, res2t := sumDistance(gal)
+	res1, res2 = int64(res1t), int64(res2t)
 	//fmt.Printf("find result %v\n", time.Since(start))
 	//fmt.Println(result1)
 	//fmt.Println(result2)
 	return
 }
 
-func sumDistance(arr []point) (res1, res2 int64) {
-	var x1, x2, y1, y2 int
-	var r1, r2 int64
+func sumDistance(arr []point) (res1, res2 uint64) {
+	var x1, x2, y1, y2 uint64
+	var r1, r2 uint64
 	lenA := len(arr)
 	for i := 0; i < lenA; i++ {
 		for k := i + 1; k < lenA; k++ {
@@ -136,26 +139,26 @@ func sumDistance(arr []point) (res1, res2 int64) {
 	return res1, res2
 }
 
-const part2Mul int64 = 1_000_000 - 1
+const part2Mul uint64 = 1_000_000 - 1
 
 //const part2Mul = 99
 
-func sumDistanceBetweenPoints(x1, x2, y1, y2 int) (res1 int64, res2 int64) {
+func sumDistanceBetweenPoints(x1, x2, y1, y2 uint64) (res1 uint64, res2 uint64) {
 	var (
-		expanse int64
+		expanse uint8
 	)
-	res1 = int64(x2 - x1 + y2 - y1)
+	res1 = x2 - x1 + y2 - y1
 	res2 = res1
 
-	expanse = int64(columnMap[x1][x2])
+	expanse = columnMap[x1][x2]
 
-	res1 += expanse
-	res2 += expanse * part2Mul
+	res1 += uint64(expanse)
+	res2 += uint64(expanse) * part2Mul
 
-	expanse = int64(rowMap[y1][y2])
+	expanse = rowMap[y1][y2]
 
-	res1 += expanse
-	res2 += expanse * part2Mul
+	res1 += uint64(expanse)
+	res2 += uint64(expanse) * part2Mul
 	return
 }
 

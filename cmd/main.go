@@ -6,12 +6,14 @@ import (
 	"time"
 )
 
-func timeFunction(function func() error) {
+func timeFunction(function func() (int64, int64, error)) {
 	start := time.Now()
-	err := function()
+	res1, res2, err := function()
 	if err != nil {
 		fmt.Println("error", err)
 	}
+	fmt.Println("result 1: ", res1)
+	fmt.Println("result 2: ", res2)
 
 	fmt.Println("Time elapsed:", time.Since(start))
 }

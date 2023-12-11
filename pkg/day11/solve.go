@@ -15,14 +15,14 @@ const (
 	rowLen, colLen        = 140, 140
 )
 
-func Solve() (res1, res2 int64, err error) {
+func Solve() (res1t, res2t uint64, err error) {
 	var (
 		fil      fs.File
 		galaxies uint8
 		buff     [colLen + 1]byte
 		columns  [colLen]uint8
 
-		expanse1, expanse2, res1t, res2t, x, prev1, prev2, mul, e1, e2 uint64
+		expanse1, expanse2, x, prev1, prev2, mul, e1, e2 uint64
 	)
 
 	fil, err = f.Open("input.txt")
@@ -75,7 +75,7 @@ func Solve() (res1, res2 int64, err error) {
 		expanse2 += part2Mul
 	}
 
-	res1, res2 = int64(res1t), int64(res2t)
+	//res1, res2 = int64(res1t), int64(res2t)
 	return
 }
 

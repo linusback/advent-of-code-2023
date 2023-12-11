@@ -105,12 +105,15 @@ func Solve() (res1, res2 int64, err error) {
 }
 
 func calculateY(gal []point, t, t2 uint64) (uint64, uint64) {
-	var p, chosen *point
-	chosen = &gal[len(gal)-1]
+	var p *point
+	p = &gal[len(gal)-1]
+	mul := uint64(len(gal) - 1)
+	t += p.yExp * mul
+	t2 += p.yExp2 * mul
 	for i := 0; i < len(gal)-1; i++ {
 		p = &gal[i]
-		t += chosen.yExp - p.yExp
-		t2 += chosen.yExp2 - p.yExp2
+		t -= p.yExp
+		t2 -= p.yExp2
 	}
 	return t, t2
 }
@@ -119,20 +122,27 @@ func calculateX(chosen *point, t, t2 uint64, curr []*point, arr ...[]*point) (ui
 	var (
 		p       *point
 		j, lenJ int
+		mul     uint64
 	)
 
 	for i := 0; i < len(arr); i++ {
 		lenJ = len(arr[i])
+		mul = uint64(lenJ)
+		t += chosen.xExp * mul
+		t2 += chosen.xExp2 * mul
 		for j = 0; j < lenJ; j++ {
 			p = arr[i][j]
-			t += chosen.xExp - p.xExp
-			t2 += chosen.xExp2 - p.xExp2
+			t -= p.xExp
+			t2 -= p.xExp2
 		}
 	}
+	mul = uint64(len(curr))
+	t += chosen.xExp * mul
+	t2 += chosen.xExp2 * mul
 	for j = 0; j < len(curr); j++ {
 		p = curr[j]
-		t += chosen.xExp - p.xExp
-		t2 += chosen.xExp2 - p.xExp2
+		t -= p.xExp
+		t2 -= p.xExp2
 	}
 	return t, t2
 }

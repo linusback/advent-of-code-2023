@@ -26,11 +26,23 @@ type Tile struct {
 	connected [][2]int64
 	val       uint64
 	tt        TileType
+
+	top, bottom, right, left int
+}
+
+func (ts *Tiles) GetCorr(x, y int) *Tile {
+	return &((*ts)[y][x])
+}
+
+func (ts *Tiles) Get(corr [2]int64) *Tile {
+	return &((*ts)[corr[1]][corr[0]])
 }
 
 type Tiles [][]Tile
 
 const maxUint64 = ^uint64(0)
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
 
 func Solve() (err error) {
 	var (
@@ -39,7 +51,7 @@ func Solve() (err error) {
 		start *Tile
 	)
 	startTime := time.Now()
-	b, err = f.ReadFile("example22.txt")
+	b, err = f.ReadFile("example2.txt")
 	if err != nil {
 		return
 	}
@@ -68,6 +80,9 @@ func Solve() (err error) {
 		return
 	}
 	start.SetConnectedForStart(&tiles)
+	//fmt.Println(start)
+	start.SetPipeStructStart()
+	//fmt.Println(start)
 	fmt.Println("parsing: ", time.Since(startTime))
 	startTime = time.Now()
 	//part 1
@@ -78,7 +93,8 @@ func Solve() (err error) {
 	tiles.PrintVals()
 	fmt.Println()
 	tiles.PrintTypes()
-	result2 := 1
+	result2 := tiles.SetTypes()
+	tiles.PrintTypes()
 	fmt.Printf("part2: %d in: %v\n", result2, time.Since(startTime))
 
 	return
@@ -90,6 +106,7 @@ func part1(t *Tiles, curr *Tile) uint64 {
 	for len(next) > 0 {
 		curr = next[0]
 		curr.tt = pipe
+		curr.SetPipeStruct()
 		next = slices.Delete(next, 0, 1)
 		if curr.val > maxVal {
 			maxVal = curr.val
@@ -99,143 +116,110 @@ func part1(t *Tiles, curr *Tile) uint64 {
 	return maxVal
 }
 
-func (ts *Tiles) PrintVals() {
-	row := make([]byte, 2*len((*ts)[0])+1)
-	for i := 0; i < len(*ts); i++ {
-		row = row[:0]
-		row = append(row, '[')
-		for j := 0; j < len((*ts)[i]); j++ {
-			if (*ts)[i][j].val < maxUint64 {
-				row = append(row, []byte(fmt.Sprintf("%d", (*ts)[i][j].val))...)
-			} else {
-				row = append(row, ' ')
-			}
-			row = append(row, ',')
-		}
-		row[len(row)-1] = ']'
-		fmt.Println(string(row))
-	}
-}
+func (ts *Tiles) SetTypes() uint64 {
+	var (
+		top, bottom, minH, minV int
+		t                       *Tile
+		result                  = uint64(0)
+	)
+	columns := make([][2]int, len((*ts)[0]))
+	for y := 0; y < len(*ts); y++ {
+		top, bottom = 0, 0
 
-func (ts *Tiles) PrintTypes() {
-	var b byte
-	var s string
-	row := make([]byte, 2*len((*ts)[0])+1)
-	for i := 0; i < len(*ts); i++ {
-		row = row[:0]
-		for j := 0; j < len((*ts)[i]); j++ {
-			switch (*ts)[i][j].tt {
-			case unknown:
-				b = 'U'
-			case pipe:
-				switch (*ts)[i][j].b {
-				case '|':
-					s = "┃ "
-				case '-':
-					s = "━━"
-				case 'L':
-					s = "┗━"
-				case 'J':
-					s = "┛ "
-				case '7':
-					s = "┓ "
-				case 'F':
-					s = "┏━"
-				case 'S':
-					s = handleStart(&(*ts)[i][j])
+		for x := 0; x < len((*ts)[y]); x++ {
+			t = ts.GetCorr(x, y)
+			if t.tt == unknown {
+				t.tt = outside
+				minH, minV = columns[y][0], top
+				if minV > bottom {
+					minV = bottom
 				}
-				row = append(row, []byte(s)...)
+				if minH > columns[y][1] {
+					minH = columns[y][1]
+				}
+				if minV%2 == 1 && minH%2 == 1 {
+					t.tt = inside
+					result++
+				}
 				continue
-			case outside:
-				b = 'O'
-			case inside:
-				b = 'I'
 			}
-			row = append(row, b, ' ')
+			top += t.top
+			bottom += t.bottom
+			columns[y][0] += t.left
+			columns[y][1] += t.right
 		}
-		fmt.Println(string(row))
+	}
+	return result
+}
+
+func (t *Tile) SetType(tl *Tiles) {
+	var isInside bool
+	if t.tt != unknown {
+		return
+	}
+	isInside = searchHorizontal((*tl)[t.y][:t.x])
+	isInside = isInside && searchVertical(tl, t.x, t.y)
+}
+func searchVertical(tl *Tiles, x, y int64) bool { return false }
+func searchHorizontal(tiles []Tile) bool {
+	//var top, bottom int
+	for i := 0; i < len(tiles); i++ {
+		switch tiles[i].b {
+
+		}
+	}
+	return false
+}
+
+func (t *Tile) SetPipeStruct() {
+	switch t.b {
+	case '|':
+		t.top = 1
+		t.bottom = 1
+	case '-':
+		t.left = 1
+		t.right = 1
+	case 'L':
+		t.top = 1
+		t.right = 1
+	case 'J':
+		t.top = 1
+		t.left = 1
+	case '7':
+		t.bottom = 1
+		t.left = 1
+	case 'F':
+		t.bottom = 1
+		t.right = 1
 	}
 }
 
-func handleStart(start *Tile) string {
-	switch len(start.connected) {
-	case 4:
-		return "╋━"
-	case 3:
-		return missing(start.connected, [2]int64{start.x, start.y})
-	case 2:
-		return missing2(start.connected, [2]int64{start.x, start.y})
-	default:
-		return "S "
-	}
-}
-
-func missing(conn [][2]int64, self [2]int64) string {
-	var missingVal int
+func (t *Tile) SetPipeStructStart() {
 	possible := [4][2]int64{
 		{0, -1},
 		{1, 0},
 		{-1, 0},
 		{0, 1},
 	}
-	for i := 0; i < len(possible); i++ {
-		if !slices.Contains(conn, [2]int64{self[0] + possible[i][0], self[1] + possible[i][1]}) {
-			missingVal = i
-			break
-		}
-	}
-	switch missingVal {
-	case 0:
-		return "┳━"
-	case 1:
-		return "┫ "
-	case 2:
-		return "┣━"
-	case 3:
-		return "┻━"
-	default:
-		return "S "
-	}
-}
+	t.top = 1
+	t.bottom = 1
+	t.right = 1
+	t.left = 1
 
-func missing2(conn [][2]int64, self [2]int64) string {
-	var missingVal1 = -1
-	var missingVal2 = -1
-	possible := [4][2]int64{
-		{0, -1},
-		{1, 0},
-		{-1, 0},
-		{0, 1},
-	}
 	for i := 0; i < len(possible); i++ {
-		if missingVal1 == -1 && !slices.Contains(conn, [2]int64{self[0] + possible[i][0], self[1] + possible[i][1]}) {
-			missingVal1 = i
-			continue
+		if !slices.Contains(t.connected, [2]int64{t.x + possible[i][0], t.y + possible[i][1]}) {
+			switch i {
+			case 0:
+				t.top = 0
+			case 1:
+				t.right = 0
+			case 2:
+				t.left = 0
+			case 3:
+				t.bottom = 0
+			}
 		}
-		if missingVal2 == -1 && !slices.Contains(conn, [2]int64{self[0] + possible[i][0], self[1] + possible[i][1]}) {
-			missingVal2 = i
-			break
-		}
 	}
-	if missingVal1 == 1 && missingVal2 == 2 {
-		return "┃ "
-	}
-	if missingVal1 == 0 && missingVal2 == 3 {
-		return "━━"
-	}
-	if missingVal1 == 2 && missingVal2 == 3 {
-		return "┗━"
-	}
-	if missingVal1 == 1 && missingVal2 == 3 {
-		return "┛ "
-	}
-	if missingVal1 == 0 && missingVal2 == 1 {
-		return "┓ "
-	}
-	if missingVal1 == 0 && missingVal2 == 2 {
-		return "┏━"
-	}
-	return "S "
 }
 
 func (t *Tile) CreateConnected(lenX, lenY int64) {
@@ -326,8 +310,4 @@ func (t *Tile) GetConnected(curr *Tile, ts *Tiles) []*Tile {
 		res = append(res, candidate)
 	}
 	return res
-}
-
-func (ts *Tiles) Get(corr [2]int64) *Tile {
-	return &((*ts)[corr[1]][corr[0]])
 }

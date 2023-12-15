@@ -2,8 +2,6 @@ package day11
 
 import (
 	"embed"
-	"io"
-	"io/fs"
 )
 
 //go:embed *.txt
@@ -17,24 +15,26 @@ const (
 
 func Solve() (res1t, res2t uint64, err error) {
 	var (
-		fil      fs.File
+		//fil      fs.File
+		b        []byte
 		galaxies uint8
-		buff     [colLen + 1]byte
+		buff     []byte
 		columns  [colLen]uint8
 
 		expanse1, expanse2, x, prev1, prev2, mul, e1, e2 uint64
 	)
 
-	fil, err = f.Open("input.txt")
+	b, err = f.ReadFile("input.txt")
 	if err != nil {
 		return
 	}
 
 	for y := uint64(0); y < rowLen; y++ {
-		_, err = fil.Read(buff[:])
-		if err != nil && err != io.EOF {
-			return
-		}
+		buff = b[y*(rowLen+1) : (y+1)*(rowLen+1)+1]
+		//_, err = fil.Read(buff[:])
+		//if err != nil && err != io.EOF {
+		//	return
+		//}
 		galaxies = 0
 		for x = 0; x < colLen; x++ {
 			if buff[x] == galaxyByte {
@@ -51,9 +51,9 @@ func Solve() (res1t, res2t uint64, err error) {
 			expanse1++
 			expanse2 += part2Mul
 		}
-		if err == io.EOF {
-			break
-		}
+		//if err == io.EOF {
+		//	break
+		//}
 	}
 
 	prev1, prev2 = 0, 0

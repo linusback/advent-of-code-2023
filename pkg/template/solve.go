@@ -9,7 +9,7 @@ import (
 //go:embed *.txt
 var f embed.FS
 
-func Solve() (err error) {
+func Solve() (res1t, res2t uint64, err error) {
 	var (
 		b   []byte
 		row util.TokenSlice
@@ -23,7 +23,7 @@ func Solve() (err error) {
 
 	for t.More() {
 		row = t.NextRow()
+		fmt.Println(row)
 	}
-	fmt.Println(row)
 	return
 }

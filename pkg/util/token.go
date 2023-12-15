@@ -54,6 +54,10 @@ func NewTokenParser(arr []byte) *TokenParser {
 	return NewTokenParserWithSeparators(arr, []byte{'\n'}, ' ')
 }
 
+func NewTokenParserSeparators(arr []byte, sep ...byte) *TokenParser {
+	return NewTokenParserWithSeparators(arr, []byte{'\n'}, sep...)
+}
+
 func NewTokenParserWithSeparators(arr []byte, rowSep []byte, sep ...byte) *TokenParser {
 	return &TokenParser{
 		state:     startState,
@@ -118,6 +122,10 @@ func (p *TokenParser) stateValue() Token {
 				s = i
 			}
 		}
+	}
+	if p.state == valueState {
+		p.state = doneState
+		return p.arr[s:]
 	}
 	p.state = doneState
 	return nil

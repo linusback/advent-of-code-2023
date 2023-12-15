@@ -14,6 +14,7 @@ func Permutate[S ~[][]K, K comparable](s S) [][]K {
 		size *= uint64(len(s[i]))
 	}
 	r := make([][]K, size)
+	//TODO fix might be broken check day12 comment for example
 	for i := 0; i < len(r); i++ {
 		r[i] = make([]K, len(s))
 		for j := 0; j < len(s); j++ {

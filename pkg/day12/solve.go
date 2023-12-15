@@ -3,7 +3,7 @@ package day12
 import (
 	"advent-of-code-2023/pkg/util"
 	"embed"
-	"fmt"
+	"slices"
 )
 
 //go:embed *.txt
@@ -13,12 +13,7 @@ type springRow struct {
 	springs      []byte
 	springGroups []uint64
 	groups       []group
-}
-
-func (r springRow) findWorkingCombinations() (res uint64) {
-	fmt.Println(string(r.springs))
-	fmt.Println(r.springGroups)
-	return 0
+	line         int
 }
 
 type group struct {
@@ -33,18 +28,24 @@ func Solve() (res1t, res2t uint64, err error) {
 		b   []byte
 		row util.TokenSlice
 	)
-	b, err = f.ReadFile("example.txt")
+	b, err = f.ReadFile("input.txt")
 	if err != nil {
 		return
 	}
 
+	//permu := util.Permutate([][]int{{1, 2}, {1, 2}, {1, 2}})
+	//fmt.Println(permu)
+	//return
 	t := util.NewTokenParserSeparators(b, ' ', ',')
 	springs := make([]springRow, 0, 1000)
+	line := 0
 	for t.More() {
 		row = t.NextRow()
 		s := springRow{
 			springs: row[0],
+			line:    line,
 		}
+		line++
 		//if len(springs) == 0 {
 		//
 		//}
@@ -54,7 +55,9 @@ func Solve() (res1t, res2t uint64, err error) {
 		for i := 1; i < len(row); i++ {
 			s.springGroups = append(s.springGroups, row[i].ParseUInt64())
 		}
-		s.findWorkingCombinations()
+		c := s.findWorkingCombinations()
+		res1t += c
+		//fmt.Println(string(row[0]), c)
 		springs = append(springs, s)
 	}
 
@@ -121,6 +124,21 @@ func (g *group) generatePermutations() {
 	}
 	g.perm = append(g.perm, start)
 	g.perm = wildcardPerm(g.perm, start, 0, len(g.wildCards))
+	g.perm = g.expandWildcard()
+}
+
+func (g *group) expandWildcard() [][]byte {
+	for i := 0; i < len(g.perm); i++ {
+		r := make([]byte, len(g.raw))
+		copy(r, g.raw)
+		for j := 0; j < len(g.perm[i]); j++ {
+			b := g.perm[i][j]
+			idx := g.wildCards[j]
+			r[idx] = b
+		}
+		g.perm[i] = r
+	}
+	return g.perm
 }
 
 func wildcardPerm(perm [][]byte, base []byte, i, len int) [][]byte {
@@ -140,6 +158,81 @@ func (g *group) setWildCards(w []int) {
 	for i := 0; i < len(g.wildCards); i++ {
 		g.wildCards[i] = w[i] - g.offset
 	}
+}
+
+func (g *group) getPossibleSpringGroups() (res [][]uint64) {
+	res = make([][]uint64, 0, len(g.perm))
+	for i := 0; i < len(g.perm); i++ {
+		r := numberOfHashtag(g.perm[i])
+		if len(r) > 0 {
+			res = append(res, r)
+		}
+	}
+	return res
+}
+
+func numberOfHashtag(arr []byte) (res []uint64) {
+	inside := false
+	s := 0
+	//fmt.Println("checking hashtags in: ", string(arr))
+	for i := 0; i < len(arr); i++ {
+		if inside && arr[i] == '.' {
+			res = append(res, uint64(i-s))
+			inside = false
+			continue
+		}
+		if !inside && arr[i] == '#' {
+			inside = true
+			s = i
+		}
+	}
+	if inside {
+		res = append(res, uint64(len(arr)-s))
+	}
+	//fmt.Println("hashtags, ", res)
+	return
+}
+
+func (r *springRow) findWorkingCombinations() (res uint64) {
+	arr := make([][][]uint64, 0, len(r.groups))
+	resLen := uint64(1)
+	for i := 0; i < len(r.groups); i++ {
+		g := r.groups[i].getPossibleSpringGroups()
+		resLen *= uint64(len(g))
+		arr = append(arr, g)
+	}
+	candidates := make([][]uint64, 0, resLen)
+	candidates = generateCombinations(candidates, arr, 0)
+	return validCombinations(candidates, r.springGroups)
+}
+
+func validCombinations(candidates [][]uint64, groups []uint64) (valid uint64) {
+	for i := 0; i < len(candidates); i++ {
+		if slices.Equal(candidates[i], groups) {
+			valid++
+		}
+	}
+	return
+}
+
+func generateCombinations(res [][]uint64, arr [][][]uint64, i int) [][]uint64 {
+	if i == len(arr) {
+		return res
+	}
+	if i == 0 {
+		for j := 0; j < len(arr[0]); j++ {
+			res = append(res, arr[0][j])
+		}
+		return generateCombinations(res, arr, i+1)
+	}
+	res2 := make([][]uint64, 0, len(res)*len(arr[i]))
+	for k := 0; k < len(res); k++ {
+		for j := 0; j < len(arr[i]); j++ {
+			r := append(res[k], arr[i][j]...)
+			res2 = append(res2, r)
+		}
+	}
+	return generateCombinations(res2, arr, i+1)
 }
 
 // ???

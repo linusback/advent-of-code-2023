@@ -1,5 +1,7 @@
 package util
 
+import "math/big"
+
 // Gcd calculate the greatest common denominator of two numbers.
 func Gcd(a, b uint64) uint64 {
 	if a == 0 {
@@ -23,4 +25,14 @@ func LcdSum(n1, d1, n2, d2 uint64) (num, den uint64) {
 	num = n1 + n2
 
 	return
+}
+
+func BinomialUint64(n, k uint64) uint64 {
+	b := &big.Int{}
+	b = b.Binomial(int64(n), int64(k))
+	if !b.IsUint64() {
+		panic("to large for uint64")
+	}
+	return b.Uint64()
+
 }
